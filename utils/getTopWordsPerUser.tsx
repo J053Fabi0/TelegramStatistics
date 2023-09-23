@@ -2,14 +2,14 @@ import { TelegramExport } from "../types/telegramExport.type.ts";
 import getMessageText from "./getMessageText.ts";
 import getWords from "./getWords.tsx";
 
-export default function getTopWordsPerUser(
-  data: TelegramExport,
-  samples = 10
-): {
+export interface TopWordsPerUser {
+  /** first key is user, then a sorted list of words with count */
   topWordsPerUser: Record<string, { word: string; count: number }[]>;
   /** first key is user, second key is word, value is count */
   wordsPerUser: Record<string, Record<string, number>>;
-} {
+}
+
+export default function getTopWordsPerUser(data: TelegramExport, samples = 10): TopWordsPerUser {
   const wordsPerUser: Record<string, Record<string, number>> = {};
   for (const message of data.messages) {
     if (message.type !== "message") continue;
