@@ -111,8 +111,8 @@ export default function TopWordsPerUser({ participantsNames, data }: TopWordsPer
         </div>
       </div>
 
-      <div class="overflow-x-auto">
-        <div class="flex gap-8 justify-center">
+      <div class="overflow-x-auto max-w-full">
+        <div class="flex gap-8 justify-center min-w-fit">
           {participantsNames.map((name) => (
             <div>
               <Typography variant="h3">{name}</Typography>

@@ -8,6 +8,10 @@
   width: fit-content;
 }
 
+.min-w-fit {
+  min-width: fit-content;
+}
+
 .whitespace-no-wrap {
   white-space: nowrap;
 }
