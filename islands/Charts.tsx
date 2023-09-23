@@ -1,6 +1,7 @@
 import { Chart } from "fresh-charts/island.tsx";
 import { BAR_COLORS } from "../utils/constants.ts";
 import getSongsSent from "../utils/getSongsSent.tsx";
+import Typography from "../components/Typography.tsx";
 import { TelegramExport } from "../types/telegramExport.type.ts";
 import getParticipantsNames from "../utils/getParticipantsNames.tsx";
 import getDailyTotalMessagesPerMonth from "../utils/getDailyTotalMessagesPerMonth.tsx";
@@ -18,7 +19,8 @@ export default function Charts({ data }: ChartsProps) {
 
   return (
     <>
-      <div class="overflow-x-auto max-w-screen-sm">
+      <div class="overflow-x-auto max-w-screen-sm mb-10">
+        <Typography variant="h2">Songs sent</Typography>
         <Chart
           type="bar"
           options={{ devicePixelRatio: 2 }}
@@ -35,7 +37,10 @@ export default function Charts({ data }: ChartsProps) {
         />
       </div>
 
-      <div class="overflow-x-auto w-full">
+      <div class="overflow-x-auto w-full mb-10">
+        <Typography variant="h2">
+          Messages sent per month (total: {dailyTotalMessagesPerMonth.reduce((a, b) => a + b.count, 0)})
+        </Typography>
         <Chart
           type="bar"
           options={{ devicePixelRatio: 2 }}
