@@ -81,7 +81,7 @@ export default function TopWordsPerUser({ participantsNames, data }: TopWordsPer
       <div class="flex gap-4 justify-center w-full">
         {rows.value && (
           <Button class="w-fit" onClick={() => addRows(10)} color="green">
-            Cargar 10 más
+            Load 10 more
           </Button>
         )}
 
