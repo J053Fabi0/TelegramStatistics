@@ -1,4 +1,6 @@
-export default function getJSON(blob: Blob) {
+export default function loadJSON<ReturnType extends Record<string, any>>(
+  blob: Blob,
+): Promise<ReturnType> {
   return new Promise((resolve, reject) => {
     try {
       const reader = new FileReader();

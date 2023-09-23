@@ -1,8 +1,10 @@
-import getJSON from "../utils/getJSON.ts";
+import loadJSON from "../utils/loadJSON.ts";
 import { useSignal } from "@preact/signals";
+import validateJSON from "../utils/validateJSON.ts";
+import { TelegramExport } from "../types/telegramExport.type.ts";
 
 export default function Statistics() {
-  const data = useSignal<Record<string, any> | null>(null);
+  const data = useSignal<TelegramExport | null>(null);
 
   return (
     <>
@@ -18,7 +20,20 @@ export default function Statistics() {
               if (!files) return;
 
               const file = files[0];
-              data.value = await getJSON(file) as Record<string, any>;
+              const unknownJson = await loadJSON<TelegramExport>(file);
+
+              const { error, value } = validateJSON(unknownJson);
+              if (error) {
+                console.dir(
+                  unknownJson.messages[+(error.details[0].context?.key ?? 0)],
+                );
+                console.dir(error.details[0].context);
+                console.dir(error);
+
+                alert(
+                  "The file you uploaded is not a valid Telegram export. Check the console for more information.",
+                );
+              } else data.value = value;
             }}
           />
         </div>
