@@ -3,3 +3,7 @@
 * {
   font-family: "Lora", sans-serif;
 }
+
+.w-fit {
+  width: fit-content;
+}

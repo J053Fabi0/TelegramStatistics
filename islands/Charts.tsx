@@ -2,8 +2,8 @@ import { Chart } from "fresh-charts/island.tsx";
 import { BAR_COLORS } from "../utils/constants.ts";
 import getSongsSent from "../utils/getSongsSent.tsx";
 import Typography from "../components/Typography.tsx";
+import TopWordsPerUser from "./charts/TopWordsPerUser.tsx";
 import { TelegramExport } from "../types/telegramExport.type.ts";
-import getTopWordsPerUser from "../utils/getTopWordsPerUser.tsx";
 import getParticipantsNames from "../utils/getParticipantsNames.tsx";
 import getDailyTotalMessagesPerMonth from "../utils/getDailyTotalMessagesPerMonth.tsx";
 
@@ -17,49 +17,11 @@ export default function Charts({ data }: ChartsProps) {
   const participantsNames = getParticipantsNames(data);
   const dailyTotalMessagesPerMonth = getDailyTotalMessagesPerMonth(data);
   const songsSent = getSongsSent(data);
-  const topWordsPerUser = getTopWordsPerUser(data, Infinity);
 
   return (
     <>
       {/* Top words per user */}
-      <div class="flex flex-wrap gap-8">
-        {participantsNames.map((name) => (
-          <div>
-            <Typography variant="h2">{name}</Typography>
-            <table class="table-auto relative">
-              <thead class="sticky top-0 left-0 right-0 bg-white">
-                <tr>
-                  <th class="px-4 py-2">Word</th>
-                  <th class="px-4 py-2">{name}</th>
-                  {participantsNames
-                    .filter((p) => p !== name)
-                    .map((name) => (
-                      <th class="px-4 py-2">{name}</th>
-                    ))}
-                </tr>
-              </thead>
-              <tbody>
-                {topWordsPerUser.topWordsPerUser[name].slice(0, 200).map(({ count, word }, i) => (
-                  <tr>
-                    <td class="border px-4 py-2">{word}</td>
-                    <td class="border px-4 py-2">
-                      #{i + 1} - {count}
-                    </td>
-                    {participantsNames
-                      .filter((p) => p !== name)
-                      .map((name) => (
-                        <td class="border px-4 py-2">
-                          #{topWordsPerUser.topWordsPerUser[name].findIndex((item) => item.word === word) + 1} -{" "}
-                          {topWordsPerUser.wordsPerUser[name][word] ?? 0}
-                        </td>
-                      ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ))}
-      </div>
+      <TopWordsPerUser data={data} participantsNames={participantsNames} />
 
       {/* Songs sent */}
       <div class="overflow-x-auto max-w-screen-sm mb-10">
