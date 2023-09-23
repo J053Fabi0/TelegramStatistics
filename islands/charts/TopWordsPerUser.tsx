@@ -45,7 +45,7 @@ export default function TopWordsPerUser({ participantsNames, data }: TopWordsPer
       for (let i = from; i < to; i++) {
         const { count, word } = topWordsPerUserFiltered.value.topWordsPerUser[name][i];
         newRows[name].push(
-          <tr key={`${name}${i}`}>
+          <tr key={`${name}${i}`} class="even:bg-gray-50">
             <td class="border px-4 py-2 whitespace-no-wrap">{word}</td>
             <td class="border px-4 py-2 whitespace-no-wrap">
               #{i + 1} - {count}
