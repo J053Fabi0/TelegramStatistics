@@ -76,8 +76,7 @@ export interface TelegramMessageFrom {
   from_id: `user${number}`;
 }
 
-export interface TelegramMessageLocation
-  extends TelegramMessageDate, TelegramMessageFrom {
+export interface TelegramMessageLocation extends TelegramMessageDate, TelegramMessageFrom {
   id: number;
   location_information: {
     latitude: number;
@@ -88,13 +87,11 @@ export interface TelegramMessageLocation
   type: "message";
 }
 
-export interface TelegramMessageLiveLocation
-  extends TelegramMessageLocation, TelegramMessageEdited {
+export interface TelegramMessageLiveLocation extends TelegramMessageLocation, TelegramMessageEdited {
   live_location_period_seconds: number;
 }
 
-export interface TelegramMessageText
-  extends TelegramMessageDate, TelegramMessageEdited, TelegramMessageFrom {
+export interface TelegramMessageText extends TelegramMessageDate, TelegramMessageEdited, TelegramMessageFrom {
   id: number;
   /** If it is empty, it is an emoji with a random output, like a dice. */
   text: string | (string | TextType)[];
@@ -125,8 +122,7 @@ export interface TelegramMessageAnimatedSticker extends TelegramMessageSticker {
   duration_seconds: number;
 }
 
-export interface TelegramMessageAsFile
-  extends TelegramMessageDate, TelegramMessageEdited, TelegramMessageFrom {
+export interface TelegramMessageAsFile extends TelegramMessageDate, TelegramMessageEdited, TelegramMessageFrom {
   file: string;
   id: number;
   mime_type: `application/${"pdf" | "zip"}` | "video/mp4";
@@ -138,16 +134,14 @@ export interface TelegramMessageAsFile
   forwarded_from?: string;
 }
 
-export interface TelegramMessageImageFile
-  extends Omit<TelegramMessageAsFile, "mime_type" | "thumbnail"> {
+export interface TelegramMessageImageFile extends Omit<TelegramMessageAsFile, "mime_type" | "thumbnail"> {
   height: number;
   width: number;
   mime_type: "image/jpeg" | "image/png";
   thumbnail: string;
 }
 
-export interface TelegramMessageVideo
-  extends Omit<TelegramMessageAsFile, "mime_type"> {
+export interface TelegramMessageVideo extends Omit<TelegramMessageAsFile, "mime_type"> {
   duration_seconds: number;
   height: number;
   width: number;
@@ -156,14 +150,12 @@ export interface TelegramMessageVideo
   thumbnail: string;
 }
 
-export interface TelegramMessageAnimation
-  extends Omit<TelegramMessageVideo, "thumbnail" | "media_type"> {
+export interface TelegramMessageAnimation extends Omit<TelegramMessageVideo, "thumbnail" | "media_type"> {
   media_type: "animation";
   thumbnail?: string;
 }
 
-export interface TelegramMessageVoiceMessage
-  extends Omit<TelegramMessageAsFile, "media_type" | "mime_type"> {
+export interface TelegramMessageVoiceMessage extends Omit<TelegramMessageAsFile, "media_type" | "mime_type"> {
   duration_seconds: number;
   media_type: "voice_message";
   mime_type: "audio/ogg";
@@ -176,8 +168,7 @@ export interface TelegramMessageBotPhoto extends TelegramMessageText {
   via_bot: string;
 }
 
-export interface TelegramMessageEpiringPhoto
-  extends TelegramMessageDate, TelegramMessageFrom {
+export interface TelegramMessageEpiringPhoto extends TelegramMessageDate, TelegramMessageFrom {
   id: number;
   photo: string;
   self_destruct_period_seconds: number;
@@ -199,16 +190,12 @@ export interface TelegramMessageServicePhoneCall extends TelegramMessageDate {
   type: "service";
 }
 
-export interface TelegramMessageServicePhoneCallMissed extends
-  Omit<
-    TelegramMessageServicePhoneCall,
-    "discard_reason" | "duration_seconds"
-  > {
+export interface TelegramMessageServicePhoneCallMissed
+  extends Omit<TelegramMessageServicePhoneCall, "discard_reason" | "duration_seconds"> {
   discard_reason: "missed";
 }
 
-export interface TelegramMessageServiceProximityReached
-  extends TelegramMessageDate, TelegramMessageFrom {
+export interface TelegramMessageServiceProximityReached extends TelegramMessageDate, TelegramMessageFrom {
   action: "proximity_reached";
   distance: number;
   id: number;
@@ -219,8 +206,7 @@ export interface TelegramMessageServiceProximityReached
   type: "service";
 }
 
-export interface TelegramMessageServiceEditChatTheme
-  extends TelegramMessageDate {
+export interface TelegramMessageServiceEditChatTheme extends TelegramMessageDate {
   action: "edit_chat_theme";
   actor: string;
   actor_id: `user${number}`;
@@ -242,8 +228,7 @@ export interface TelegramMessageServicePinMessage extends TelegramMessageDate {
   type: "service";
 }
 
-export interface TelegramMessageServiceSuggestProfilePhoto
-  extends TelegramMessageDate {
+export interface TelegramMessageServiceSuggestProfilePhoto extends TelegramMessageDate {
   action: "suggest_profile_photo";
   actor: string;
   actor_id: `user${number}`;
@@ -258,5 +243,4 @@ export interface TelegramMessageServiceSuggestProfilePhoto
 
 // Text Entities
 
-export interface TelegramTextEntity {
-}
+export interface TelegramTextEntity {}
