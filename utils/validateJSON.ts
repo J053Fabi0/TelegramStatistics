@@ -4,6 +4,7 @@ import {
   TelegramMessageAnimatedSticker,
   TelegramMessageAnimation,
   TelegramMessageAsFile,
+  TelegramMessageAudioFile,
   TelegramMessageBotPhoto,
   TelegramMessageDate,
   TelegramMessageEdited,
@@ -22,6 +23,7 @@ import {
   TelegramMessageTextViaBot,
   TelegramMessageVideo,
   TelegramMessageVoiceMessage,
+  TextTypeCode,
   TextTypeCustomEmoji,
   TextTypeGeneric,
   TextTypeTextLink,
@@ -39,7 +41,11 @@ const edited: Required<SchemaMap<TelegramMessageEdited>> = {
   edited_unixtime: joi.string(),
   edited: joi.string(),
 };
-const strings = (...t: string[]) => joi.string().valid(...t).required();
+const strings = (...t: string[]) =>
+  joi
+    .string()
+    .valid(...t)
+    .required();
 const id = joi.number().required();
 const text_entities = joi.array().required();
 const reply_to_message_id = joi.number();
@@ -66,8 +72,9 @@ const textTypeGeneric: Required<SchemaMap<TextTypeGeneric>> = {
     "strikethrough",
     "spoiler",
     "hashtag",
+    "cashtag",
     "email",
-    "phone",
+    "phone"
   ),
 };
 
@@ -77,15 +84,22 @@ const textTypeTextLink: Required<SchemaMap<TextTypeTextLink>> = {
   type: strings("text_link"),
 };
 
-const text = joi.alternatives().try(
-  joi.string().allow(""),
-  joi.array().min(1).items(
+const textTypeCode: Required<SchemaMap<TextTypeCode>> = {
+  text: joi.string().required(),
+  language: joi.string().allow("").required(),
+  type: strings("pre"),
+};
+
+const text = joi
+  .alternatives()
+  .try(
     joi.string().allow(""),
-    textTypeCustomEmoji,
-    textTypeGeneric,
-    textTypeTextLink,
-  ),
-).required();
+    joi
+      .array()
+      .min(1)
+      .items(joi.string().allow(""), textTypeCustomEmoji, textTypeGeneric, textTypeTextLink, textTypeCode)
+  )
+  .required();
 
 const telegramMessageText: Required<SchemaMap<TelegramMessageText>> = {
   ...date,
@@ -99,9 +113,7 @@ const telegramMessageText: Required<SchemaMap<TelegramMessageText>> = {
   type: strings("message"),
 };
 
-const telegramMessageTextViaBot: Required<
-  SchemaMap<TelegramMessageTextViaBot>
-> = {
+const telegramMessageTextViaBot: Required<SchemaMap<TelegramMessageTextViaBot>> = {
   ...telegramMessageText,
   via_bot: joi.string().pattern(/^@/),
 };
@@ -118,9 +130,7 @@ const telegramMessageSticker: Required<SchemaMap<TelegramMessageSticker>> = {
   thumbnail: joi.string().required(),
 };
 
-const telegramMessageAnimatedSticker: Required<
-  SchemaMap<TelegramMessageAnimatedSticker>
-> = {
+const telegramMessageAnimatedSticker: Required<SchemaMap<TelegramMessageAnimatedSticker>> = {
   ...telegramMessageSticker,
   duration_seconds: joi.number().required(),
 };
@@ -131,7 +141,7 @@ const telegramMessageAsFile: Required<SchemaMap<TelegramMessageAsFile>> = {
   file: joi.string().required(),
   ...from,
   id,
-  mime_type: strings("application/pdf", "application/zip", "video/mp4"),
+  mime_type: joi.string().required(),
   text,
   text_entities: joi.array().required(),
   thumbnail: joi.string(),
@@ -140,17 +150,16 @@ const telegramMessageAsFile: Required<SchemaMap<TelegramMessageAsFile>> = {
   type: strings("message"),
 };
 
-const telegramMessageImageFile: Required<SchemaMap<TelegramMessageImageFile>> =
-  {
-    ...(() => {
-      const { thumbnail: _, ...a } = telegramMessageAsFile;
-      return a;
-    })(),
-    thumbnail: joi.string(),
-    mime_type: strings("image/jpeg", "image/png"),
-    height: joi.number().required(),
-    width: joi.number().required(),
-  };
+const telegramMessageImageFile: Required<SchemaMap<TelegramMessageImageFile>> = {
+  ...(() => {
+    const { thumbnail: _, ...a } = telegramMessageAsFile;
+    return a;
+  })(),
+  thumbnail: joi.string(),
+  mime_type: strings("image/jpeg", "image/png"),
+  height: joi.number().required(),
+  width: joi.number().required(),
+};
 
 const telegramMessageVideo: Required<SchemaMap<TelegramMessageVideo>> = {
   ...telegramMessageAsFile,
@@ -162,25 +171,38 @@ const telegramMessageVideo: Required<SchemaMap<TelegramMessageVideo>> = {
   mime_type: strings("video/mp4"),
 };
 
-const telegramMessageAnimation: Required<SchemaMap<TelegramMessageAnimation>> =
-  {
-    ...(() => {
-      const { thumbnail: _, ...a } = telegramMessageVideo;
-      return a;
-    })(),
-    thumbnail: joi.string(),
-    media_type: strings("animation"),
-  };
+const telegramMessageAnimation: Required<SchemaMap<TelegramMessageAnimation>> = {
+  ...(() => {
+    const { thumbnail: _, ...a } = telegramMessageVideo;
+    return a;
+  })(),
+  thumbnail: joi.string(),
+  media_type: strings("animation"),
+};
 
-const telegramMessageVoiceMessage: Required<
-  SchemaMap<TelegramMessageVoiceMessage>
-> = {
+const telegramMessageVoiceMessage: Required<SchemaMap<TelegramMessageVoiceMessage>> = {
   ...(() => {
     const { height: _, width: __, ...a } = telegramMessageAnimation;
     return a;
   })(),
   media_type: strings("voice_message"),
   mime_type: strings("audio/ogg"),
+};
+
+const telegramMessageAudioFile: Required<SchemaMap<TelegramMessageAudioFile>> = {
+  ...(() => {
+    const { height: _, width: __, ...a } = telegramMessageAnimation;
+    return a;
+  })(),
+  media_type: strings("audio_file"),
+  mime_type: joi
+    .string()
+    .pattern(/^audio\//)
+    .required(),
+  duration_seconds: joi.number().required(),
+  performer: joi.string(),
+  title: joi.string(),
+  thumbnail: joi.string(),
 };
 
 const telegramMessageBotPhoto: Required<SchemaMap<TelegramMessageBotPhoto>> = {
@@ -192,9 +214,7 @@ const telegramMessageBotPhoto: Required<SchemaMap<TelegramMessageBotPhoto>> = {
   text,
 };
 
-const telegramMessageExpiringPhoto: Required<
-  SchemaMap<TelegramMessageEpiringPhoto>
-> = {
+const telegramMessageExpiringPhoto: Required<SchemaMap<TelegramMessageEpiringPhoto>> = {
   ...date,
   ...from,
   id,
@@ -209,18 +229,18 @@ const telegramMessageLocation: Required<SchemaMap<TelegramMessageLocation>> = {
   ...date,
   ...from,
   id,
-  location_information: joi.object({
-    latitude: joi.number().required(),
-    longitude: joi.number().required(),
-  }).required(),
+  location_information: joi
+    .object({
+      latitude: joi.number().required(),
+      longitude: joi.number().required(),
+    })
+    .required(),
   text: strings(""),
   text_entities: joi.array().length(0).required(),
   type: strings("message"),
 };
 
-const telegramMessageLiveLocation: Required<
-  SchemaMap<TelegramMessageLiveLocation>
-> = {
+const telegramMessageLiveLocation: Required<SchemaMap<TelegramMessageLiveLocation>> = {
   ...edited,
   ...telegramMessageLocation,
   live_location_period_seconds: joi.number().required(),
@@ -234,9 +254,7 @@ const commonService = {
   type: strings("service"),
 };
 
-const telegramMessageServicePhoneCall: Required<
-  SchemaMap<TelegramMessageServicePhoneCall>
-> = {
+const telegramMessageServicePhoneCall: Required<SchemaMap<TelegramMessageServicePhoneCall>> = {
   action: strings("phone_call"),
   actor: joi.string().required(),
   actor_id: from.from_id,
@@ -245,19 +263,15 @@ const telegramMessageServicePhoneCall: Required<
   ...commonService,
 };
 
-const telegramMessageServicePhoneCallMissed: Required<
-  SchemaMap<TelegramMessageServicePhoneCallMissed>
-> = {
+const telegramMessageServicePhoneCallMissed: Required<SchemaMap<TelegramMessageServicePhoneCallMissed>> = {
   ...(() => {
     const { duration_seconds: _, ...a } = telegramMessageServicePhoneCall;
     return a;
   })(),
-  discard_reason: strings("missed"),
+  discard_reason: strings("missed", "busy"),
 };
 
-const telegramMessageServiceProximityReached: Required<
-  SchemaMap<TelegramMessageServiceProximityReached>
-> = {
+const telegramMessageServiceProximityReached: Required<SchemaMap<TelegramMessageServiceProximityReached>> = {
   action: strings("proximity_reached"),
   distance: joi.number().required(),
   ...from,
@@ -266,9 +280,7 @@ const telegramMessageServiceProximityReached: Required<
   ...commonService,
 };
 
-const telegramMessageServiceEditChatTheme: Required<
-  SchemaMap<TelegramMessageServiceEditChatTheme>
-> = {
+const telegramMessageServiceEditChatTheme: Required<SchemaMap<TelegramMessageServiceEditChatTheme>> = {
   action: strings("edit_chat_theme"),
   actor: joi.string().required(),
   actor_id: from.from_id,
@@ -276,9 +288,7 @@ const telegramMessageServiceEditChatTheme: Required<
   ...commonService,
 };
 
-const telegramMessageServicePinMessage: Required<
-  SchemaMap<TelegramMessageServicePinMessage>
-> = {
+const telegramMessageServicePinMessage: Required<SchemaMap<TelegramMessageServicePinMessage>> = {
   action: strings("pin_message"),
   actor: joi.string().required(),
   actor_id: from.from_id,
@@ -286,9 +296,7 @@ const telegramMessageServicePinMessage: Required<
   ...commonService,
 };
 
-const telegramMessageServiceSuggestProfilePhoto: Required<
-  SchemaMap<TelegramMessageServiceSuggestProfilePhoto>
-> = {
+const telegramMessageServiceSuggestProfilePhoto: Required<SchemaMap<TelegramMessageServiceSuggestProfilePhoto>> = {
   action: strings("suggest_profile_photo"),
   actor: joi.string().required(),
   actor_id: from.from_id,
@@ -302,29 +310,34 @@ const schema = joi.object<TelegramExport>({
   name: joi.string().required(),
   type: joi.string().valid("personal_chat").required(),
   id: joi.number().required(),
-  messages: joi.array().items(
-    joi.alternatives().try(
-      makeEditedAnd(telegramMessageText),
-      makeEditedAnd(telegramMessageTextViaBot),
-      makeEditedAnd(telegramMessageSticker),
-      makeEditedAnd(telegramMessageAnimatedSticker),
-      makeEditedAnd(telegramMessageAsFile),
-      makeEditedAnd(telegramMessageImageFile),
-      makeEditedAnd(telegramMessageVideo),
-      makeEditedAnd(telegramMessageAnimation),
-      makeEditedAnd(telegramMessageVoiceMessage),
-      makeEditedAnd(telegramMessageBotPhoto),
-      makeEditedAnd(telegramMessageExpiringPhoto),
-      makeEditedAnd(telegramMessageLocation),
-      makeEditedAnd(telegramMessageLiveLocation),
-      telegramMessageServicePhoneCall,
-      telegramMessageServicePhoneCallMissed,
-      telegramMessageServiceProximityReached,
-      telegramMessageServiceEditChatTheme,
-      telegramMessageServicePinMessage,
-      telegramMessageServiceSuggestProfilePhoto,
+  messages: joi
+    .array()
+    .items(
+      joi
+        .alternatives()
+        .try(
+          makeEditedAnd(telegramMessageText),
+          makeEditedAnd(telegramMessageTextViaBot),
+          makeEditedAnd(telegramMessageSticker),
+          makeEditedAnd(telegramMessageAnimatedSticker),
+          makeEditedAnd(telegramMessageAsFile),
+          makeEditedAnd(telegramMessageImageFile),
+          makeEditedAnd(telegramMessageVideo),
+          makeEditedAnd(telegramMessageAnimation),
+          makeEditedAnd(telegramMessageVoiceMessage),
+          makeEditedAnd(telegramMessageAudioFile),
+          makeEditedAnd(telegramMessageBotPhoto),
+          makeEditedAnd(telegramMessageExpiringPhoto),
+          makeEditedAnd(telegramMessageLocation),
+          makeEditedAnd(telegramMessageLiveLocation),
+          telegramMessageServicePhoneCall,
+          telegramMessageServicePhoneCallMissed,
+          telegramMessageServiceProximityReached,
+          telegramMessageServiceEditChatTheme,
+          telegramMessageServicePinMessage,
+          telegramMessageServiceSuggestProfilePhoto
+        )
     ),
-  ),
 });
 
 export default function validateJSON(json: TelegramExport) {

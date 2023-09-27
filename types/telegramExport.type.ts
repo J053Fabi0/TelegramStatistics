@@ -47,6 +47,7 @@ export interface TextTypeGeneric {
     | "strikethrough"
     | "spoiler"
     | "hashtag"
+    | "cashtag"
     | "email"
     | "phone";
 }
@@ -57,7 +58,13 @@ export interface TextTypeTextLink {
   type: "text_link";
 }
 
-export type TextType = TextTypeCustomEmoji | TextTypeGeneric;
+export interface TextTypeCode {
+  language: string;
+  text: string;
+  type: "pre";
+}
+
+export type TextType = TextTypeCustomEmoji | TextTypeGeneric | TextTypeCode;
 
 export interface TelegramMessageDate {
   /** Add ".000Z" to convert to Date */
@@ -125,7 +132,7 @@ export interface TelegramMessageAnimatedSticker extends TelegramMessageSticker {
 export interface TelegramMessageAsFile extends TelegramMessageDate, TelegramMessageEdited, TelegramMessageFrom {
   file: string;
   id: number;
-  mime_type: `application/${"pdf" | "zip"}` | "video/mp4";
+  mime_type: `application/${"pdf" | "zip"}` | "video/mp4" | string;
   text: string | (string | TextType)[];
   text_entities: TelegramTextEntity[];
   type: "message";
@@ -161,6 +168,15 @@ export interface TelegramMessageVoiceMessage extends Omit<TelegramMessageAsFile,
   mime_type: "audio/ogg";
 }
 
+export interface TelegramMessageAudioFile extends Omit<TelegramMessageAsFile, "media_type" | "mime_type"> {
+  media_type: "audio_file";
+  mime_type: `audio/${string}`;
+  duration_seconds: number;
+  performer?: string; // not sure if this is optional
+  title?: string; // not sure if this is optional
+  thumbnail?: string;
+}
+
 export interface TelegramMessageBotPhoto extends TelegramMessageText {
   height: number;
   photo: string;
@@ -192,7 +208,7 @@ export interface TelegramMessageServicePhoneCall extends TelegramMessageDate {
 
 export interface TelegramMessageServicePhoneCallMissed
   extends Omit<TelegramMessageServicePhoneCall, "discard_reason" | "duration_seconds"> {
-  discard_reason: "missed";
+  discard_reason: "missed" | "busy";
 }
 
 export interface TelegramMessageServiceProximityReached extends TelegramMessageDate, TelegramMessageFrom {
