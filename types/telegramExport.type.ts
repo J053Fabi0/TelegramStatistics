@@ -15,9 +15,13 @@ export type TelegramMessage =
   | TelegramMessageServiceEditChatTheme
   | TelegramMessageServicePinMessage
   | TelegramMessageServiceSuggestProfilePhoto
+  | TelegramMessageServiceJoinedTelegram
+  | TelegramMessageServiceScoreInGame
+  | TelegramMessageServiceTakeScreenshot
   // Type message
   | TelegramMessageText
   | TelegramMessageTextViaBot
+  | TelegramMessageGame
   | TelegramMessageAsFile
   | TelegramMessageAnimatedStickerViaBot
   | TelegramMessageVideo
@@ -93,7 +97,7 @@ export interface TelegramMessageEdited {
 
 export interface TelegramMessageFrom {
   from: string;
-  from_id: `user${number}`;
+  from_id: `user${number}` | number;
 }
 
 export interface TelegramMessagePoll extends TelegramMessageDate, TelegramMessageFrom {
@@ -159,14 +163,25 @@ export interface TelegramMessageText extends TelegramMessageDate, TelegramMessag
   type: "message";
 }
 
+export interface TelegramMessageGame extends TelegramMessageDate, TelegramMessageEdited, TelegramMessageFrom {
+  game_description: string;
+  game_link: string;
+  game_title: string;
+  id: number;
+  text: string | (string | TextType)[];
+  text_entities?: TelegramTextEntity[];
+  type: "message";
+  via_bot: string;
+}
+
 export interface TelegramMessageTextViaBot extends TelegramMessageText {
   via_bot: string;
 }
 
 export interface TelegramMessageSticker extends TelegramMessageText {
   file: string;
-  height: number;
-  width: number;
+  height?: number;
+  width?: number;
   media_type: "sticker";
   /** If it doesn't have this, it is a sticker sent as file */
   sticker_emoji?: string;
@@ -268,7 +283,7 @@ export interface TelegramMessageServicePhoneCall extends TelegramMessageDate {
   action: "phone_call";
   /** The name of the user */
   actor: string;
-  actor_id: `user${number}`;
+  actor_id: `user${number}` | number;
   discard_reason: "hangup" | "disconnect";
   duration_seconds?: number;
   id: number;
@@ -296,7 +311,7 @@ export interface TelegramMessageServiceProximityReached extends TelegramMessageD
 export interface TelegramMessageServiceEditChatTheme extends TelegramMessageDate {
   action: "edit_chat_theme";
   actor: string;
-  actor_id: `user${number}`;
+  actor_id: `user${number}` | number;
   emoticon?: string;
   id: number;
   text: "";
@@ -307,7 +322,7 @@ export interface TelegramMessageServiceEditChatTheme extends TelegramMessageDate
 export interface TelegramMessageServicePinMessage extends TelegramMessageDate {
   action: "pin_message";
   actor: string;
-  actor_id: `user${number}`;
+  actor_id: `user${number}` | number;
   id: number;
   message_id: number;
   text: "";
@@ -318,11 +333,43 @@ export interface TelegramMessageServicePinMessage extends TelegramMessageDate {
 export interface TelegramMessageServiceSuggestProfilePhoto extends TelegramMessageDate {
   action: "suggest_profile_photo";
   actor: string;
-  actor_id: `user${number}`;
+  actor_id: `user${number}` | number;
   height: number;
   width: number;
   id: number;
   photo: string;
+  text: "";
+  text_entities?: [];
+  type: "service";
+}
+
+export interface TelegramMessageServiceJoinedTelegram extends TelegramMessageDate {
+  action: "joined_telegram";
+  actor: string;
+  actor_id: `user${number}` | number;
+  id: number;
+  text: "";
+  text_entities?: [];
+  type: "service";
+}
+
+export interface TelegramMessageServiceScoreInGame extends TelegramMessageDate {
+  action: "score_in_game";
+  actor: string;
+  actor_id: `user${number}` | number;
+  game_message_id: number;
+  id: number;
+  score: number;
+  text: "";
+  text_entities?: [];
+  type: "service";
+}
+
+export interface TelegramMessageServiceTakeScreenshot extends TelegramMessageDate {
+  action: "take_screenshot";
+  actor: string;
+  actor_id: `user${number}` | number;
+  id: number;
   text: "";
   text_entities?: [];
   type: "service";

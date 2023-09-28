@@ -12,16 +12,20 @@ import {
   TelegramMessageDate,
   TelegramMessageEdited,
   TelegramMessageExpiringPhoto,
+  TelegramMessageGame,
   TelegramMessageImageFile,
   TelegramMessageLiveLocation,
   TelegramMessageLocation,
   TelegramMessagePoll,
   TelegramMessageServiceEditChatTheme,
+  TelegramMessageServiceJoinedTelegram,
   TelegramMessageServicePhoneCall,
   TelegramMessageServicePhoneCallMissed,
   TelegramMessageServicePinMessage,
   TelegramMessageServiceProximityReached,
+  TelegramMessageServiceScoreInGame,
   TelegramMessageServiceSuggestProfilePhoto,
+  TelegramMessageServiceTakeScreenshot,
   TelegramMessageSticker,
   TelegramMessageText,
   TelegramMessageTextViaBot,
@@ -37,7 +41,7 @@ import {
 
 const from = {
   from: joi.string().required(),
-  from_id: joi.string().pattern(/^user/).required(),
+  from_id: joi.alternatives().try(joi.string().pattern(/^user/), joi.number()).required(),
 };
 const date: Required<SchemaMap<TelegramMessageDate>> = {
   date_unixtime: joi.string(),
@@ -146,14 +150,28 @@ const telegramMessageText: Required<SchemaMap<TelegramMessageText>> = {
 
 const telegramMessageTextViaBot: Required<SchemaMap<TelegramMessageTextViaBot>> = {
   ...telegramMessageText,
-  via_bot,
+  via_bot: via_bot.required(),
+};
+
+const telegramMessageGame: Required<SchemaMap<TelegramMessageGame>> = {
+  ...date,
+  ...from,
+  ...edited,
+  game_description: joi.string().required(),
+  game_link: joi.string().required(),
+  game_title: joi.string().required(),
+  id,
+  text,
+  text_entities,
+  type: strings("message"),
+  via_bot: via_bot.required(),
 };
 
 const telegramMessageSticker: Required<SchemaMap<TelegramMessageSticker>> = {
   ...telegramMessageText,
   file: joi.string().required(),
-  height: joi.number().required(),
-  width: joi.number().required(),
+  height: joi.number(),
+  width: joi.number(),
   media_type: strings("sticker"),
   sticker_emoji: joi.string(),
   text: strings(""),
@@ -417,6 +435,29 @@ const telegramMessageServiceSuggestProfilePhoto: Required<SchemaMap<TelegramMess
   ...commonService,
 };
 
+const telegramMessageServiceJoinedTelegram: Required<SchemaMap<TelegramMessageServiceJoinedTelegram>> = {
+  action: strings("joined_telegram"),
+  actor: joi.string().required(),
+  actor_id: from.from_id,
+  ...commonService,
+};
+
+const telegramMessageServiceScoreInGame: Required<SchemaMap<TelegramMessageServiceScoreInGame>> = {
+  action: strings("score_in_game"),
+  actor: joi.string().required(),
+  actor_id: from.from_id,
+  game_message_id: joi.number().required(),
+  score: joi.number().required(),
+  ...commonService,
+};
+
+const telegramMessageServiceTakeScreenshot: Required<SchemaMap<TelegramMessageServiceTakeScreenshot>> = {
+  action: strings("take_screenshot"),
+  actor: joi.string().required(),
+  actor_id: from.from_id,
+  ...commonService,
+};
+
 const schema = joi.object<TelegramExport>({
   name: joi.string().required(),
   type: joi.string().valid("personal_chat").required(),
@@ -429,7 +470,8 @@ const schema = joi.object<TelegramExport>({
         .try(
           makeEditedAnd(telegramMessageText),
           makeEditedAnd(telegramMessageTextViaBot),
-          makeEditedAnd(telegramMessageSticker),
+          makeEditedAnd(telegramMessageGame),
+          makeEditedAnd(telegramMessageSticker).and("height", "width"),
           makeEditedAnd(telegramMessageAnimatedSticker),
           makeEditedAnd(telegramMessageAsFile),
           telegramMessageAnimatedStickerViaBot,
@@ -451,7 +493,10 @@ const schema = joi.object<TelegramExport>({
           telegramMessageServiceProximityReached,
           telegramMessageServiceEditChatTheme,
           telegramMessageServicePinMessage,
-          telegramMessageServiceSuggestProfilePhoto
+          telegramMessageServiceSuggestProfilePhoto,
+          telegramMessageServiceJoinedTelegram,
+          telegramMessageServiceScoreInGame,
+          telegramMessageServiceTakeScreenshot
         )
     ),
 });
