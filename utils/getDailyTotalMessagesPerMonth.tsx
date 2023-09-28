@@ -7,7 +7,7 @@ export default function getDailyTotalMessagesPerMonth(data: TelegramExport) {
   for (const message of data.messages) {
     if (message.type !== "message" || !getMessageText(message)) continue;
 
-    const date = new Date(+message.date_unixtime * 1000);
+    const date = new Date(message.date_unixtime ? +message.date_unixtime * 1000 : `${message.date}.000Z`);
     const title = `${nameOfMonth(date)} ${date.getFullYear()}`;
 
     const index = dailyTotalMessagesPerMonth.findIndex((item) => item.title === title);

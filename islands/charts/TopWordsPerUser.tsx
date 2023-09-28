@@ -31,7 +31,6 @@ export default function TopWordsPerUser({ participantsNames, data }: TopWordsPer
       });
     }
 
-    console.log(newTopWordsPerUser);
     return newTopWordsPerUser;
   });
 

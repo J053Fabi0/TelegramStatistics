@@ -19,14 +19,19 @@ export type TelegramMessage =
   | TelegramMessageText
   | TelegramMessageTextViaBot
   | TelegramMessageAsFile
+  | TelegramMessageAnimatedStickerViaBot
   | TelegramMessageVideo
+  | TelegramMessageVideoMessage
   | TelegramMessageAnimation
   | TelegramMessageBotPhoto
-  | TelegramMessageEpiringPhoto
+  | TelegramMessageExpiringPhoto
   | TelegramMessageVoiceMessage
   | TelegramMessageImageFile
+  | TelegramMessageAsFileNoMimeType
   | TelegramMessageLocation
   | TelegramMessageLiveLocation
+  | TelegramMessagePoll
+  | TelegramMessageContact
   | TelegramMessageAnimatedSticker
   | TelegramMessageSticker;
 
@@ -44,8 +49,10 @@ export interface TextTypeGeneric {
     | "code"
     | "italic"
     | "bold"
+    | "underline"
     | "strikethrough"
     | "spoiler"
+    | "bank_card"
     | "hashtag"
     | "cashtag"
     | "email"
@@ -64,23 +71,47 @@ export interface TextTypeCode {
   type: "pre";
 }
 
-export type TextType = TextTypeCustomEmoji | TextTypeGeneric | TextTypeCode;
+export interface TextTypeMentionName {
+  text: string;
+  type: "mention_name";
+  user_id: number;
+}
+
+export type TextType = TextTypeCustomEmoji | TextTypeGeneric | TextTypeCode | TextTypeMentionName;
 
 export interface TelegramMessageDate {
   /** Add ".000Z" to convert to Date */
   date: string;
-  date_unixtime: string;
+  date_unixtime?: string;
 }
 
 export interface TelegramMessageEdited {
   /** Add ".000Z" to convert to Date */
-  edited: string;
-  edited_unixtime: string;
+  edited?: string;
+  edited_unixtime?: string;
 }
 
 export interface TelegramMessageFrom {
   from: string;
   from_id: `user${number}`;
+}
+
+export interface TelegramMessagePoll extends TelegramMessageDate, TelegramMessageFrom {
+  forwarded_from?: string | null;
+  id: number;
+  poll: {
+    answers: {
+      chosen: boolean;
+      text: string;
+      voters: number;
+    }[];
+    closed: boolean;
+    question: string;
+    total_voters: number;
+  };
+  text: "";
+  text_entities?: [];
+  type: "message";
 }
 
 export interface TelegramMessageLocation extends TelegramMessageDate, TelegramMessageFrom {
@@ -89,23 +120,42 @@ export interface TelegramMessageLocation extends TelegramMessageDate, TelegramMe
     latitude: number;
     longitude: number;
   };
+  address?: string;
+  place_name?: string;
   text: "";
-  text_entities: [];
+  text_entities?: [];
+  reply_to_message_id?: number;
   type: "message";
+  forwarded_from?: string | null;
 }
 
 export interface TelegramMessageLiveLocation extends TelegramMessageLocation, TelegramMessageEdited {
   live_location_period_seconds: number;
 }
 
+export interface TelegramMessageContact extends TelegramMessageDate, TelegramMessageFrom {
+  id: number;
+  text: "";
+  text_entities?: [];
+  type: "message";
+  reply_to_message_id?: number;
+  contact_vcard?: string;
+  contact_information: {
+    first_name: string;
+    last_name: string;
+    phone_number: string;
+  };
+  forwarded_from?: string | null;
+}
+
 export interface TelegramMessageText extends TelegramMessageDate, TelegramMessageEdited, TelegramMessageFrom {
   id: number;
   /** If it is empty, it is an emoji with a random output, like a dice. */
   text: string | (string | TextType)[];
-  text_entities: TelegramTextEntity[];
+  text_entities?: TelegramTextEntity[];
   reply_to_message_id?: number;
   /** The public name */
-  forwarded_from?: string;
+  forwarded_from?: string | null;
   type: "message";
 }
 
@@ -121,8 +171,9 @@ export interface TelegramMessageSticker extends TelegramMessageText {
   /** If it doesn't have this, it is a sticker sent as file */
   sticker_emoji?: string;
   text: "";
-  text_entities: [];
-  thumbnail: string;
+  text_entities?: [];
+  thumbnail?: string;
+  via_bot?: string;
 }
 
 export interface TelegramMessageAnimatedSticker extends TelegramMessageSticker {
@@ -134,17 +185,30 @@ export interface TelegramMessageAsFile extends TelegramMessageDate, TelegramMess
   id: number;
   mime_type: `application/${"pdf" | "zip"}` | "video/mp4" | string;
   text: string | (string | TextType)[];
-  text_entities: TelegramTextEntity[];
+  text_entities?: TelegramTextEntity[];
   type: "message";
   thumbnail?: string;
   reply_to_message_id?: number;
-  forwarded_from?: string;
+  forwarded_from?: string | null;
 }
+
+export interface TelegramMessageAnimatedStickerViaBot
+  extends Omit<TelegramMessageAsFile, "mime_type" | "thumbnail" | "text" | "text_entities"> {
+  height: number;
+  width: number;
+  mime_type: "application/x-tgsticker";
+  thumbnail: string;
+  text: "";
+  text_entities?: [];
+  via_bot: string;
+}
+
+export type TelegramMessageAsFileNoMimeType = Omit<TelegramMessageAsFile, "mime_type">;
 
 export interface TelegramMessageImageFile extends Omit<TelegramMessageAsFile, "mime_type" | "thumbnail"> {
   height: number;
   width: number;
-  mime_type: "image/jpeg" | "image/png";
+  mime_type: "image/jpeg" | "image/png" | "image/heif" | "image/gif";
   thumbnail: string;
 }
 
@@ -153,13 +217,19 @@ export interface TelegramMessageVideo extends Omit<TelegramMessageAsFile, "mime_
   height: number;
   width: number;
   media_type: "video_file";
-  mime_type: "video/mp4";
+  mime_type: `video/${string}`;
   thumbnail: string;
+}
+
+export interface TelegramMessageVideoMessage extends Omit<TelegramMessageVideo, "thumbnail" | "media_type"> {
+  media_type: "video_message";
+  thumbnail?: string;
 }
 
 export interface TelegramMessageAnimation extends Omit<TelegramMessageVideo, "thumbnail" | "media_type"> {
   media_type: "animation";
   thumbnail?: string;
+  via_bot?: string;
 }
 
 export interface TelegramMessageVoiceMessage extends Omit<TelegramMessageAsFile, "media_type" | "mime_type"> {
@@ -184,12 +254,13 @@ export interface TelegramMessageBotPhoto extends TelegramMessageText {
   via_bot: string;
 }
 
-export interface TelegramMessageEpiringPhoto extends TelegramMessageDate, TelegramMessageFrom {
+export interface TelegramMessageExpiringPhoto extends TelegramMessageDate, TelegramMessageFrom {
   id: number;
-  photo: string;
+  photo?: string;
+  file?: string;
   self_destruct_period_seconds: number;
   text: string | (string | TextType)[];
-  text_entities: TelegramTextEntity[];
+  text_entities?: TelegramTextEntity[];
   type: "message";
 }
 
@@ -198,11 +269,11 @@ export interface TelegramMessageServicePhoneCall extends TelegramMessageDate {
   /** The name of the user */
   actor: string;
   actor_id: `user${number}`;
-  discard_reason: "hangup";
-  duration_seconds: number;
+  discard_reason: "hangup" | "disconnect";
+  duration_seconds?: number;
   id: number;
   text: "";
-  text_entities: [];
+  text_entities?: [];
   type: "service";
 }
 
@@ -216,7 +287,7 @@ export interface TelegramMessageServiceProximityReached extends TelegramMessageD
   distance: number;
   id: number;
   text: "";
-  text_entities: [];
+  text_entities?: [];
   to: string;
   to_id: `user${number}`;
   type: "service";
@@ -226,10 +297,10 @@ export interface TelegramMessageServiceEditChatTheme extends TelegramMessageDate
   action: "edit_chat_theme";
   actor: string;
   actor_id: `user${number}`;
-  emoticon: string;
+  emoticon?: string;
   id: number;
   text: "";
-  text_entities: [];
+  text_entities?: [];
   type: "service";
 }
 
@@ -240,7 +311,7 @@ export interface TelegramMessageServicePinMessage extends TelegramMessageDate {
   id: number;
   message_id: number;
   text: "";
-  text_entities: [];
+  text_entities?: [];
   type: "service";
 }
 
@@ -253,7 +324,7 @@ export interface TelegramMessageServiceSuggestProfilePhoto extends TelegramMessa
   id: number;
   photo: string;
   text: "";
-  text_entities: [];
+  text_entities?: [];
   type: "service";
 }
 

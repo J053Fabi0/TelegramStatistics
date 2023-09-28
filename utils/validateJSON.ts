@@ -2,16 +2,20 @@ import joi, { SchemaMap } from "joi";
 import {
   TelegramExport,
   TelegramMessageAnimatedSticker,
+  TelegramMessageAnimatedStickerViaBot,
   TelegramMessageAnimation,
   TelegramMessageAsFile,
+  TelegramMessageAsFileNoMimeType,
   TelegramMessageAudioFile,
   TelegramMessageBotPhoto,
+  TelegramMessageContact,
   TelegramMessageDate,
   TelegramMessageEdited,
-  TelegramMessageEpiringPhoto,
+  TelegramMessageExpiringPhoto,
   TelegramMessageImageFile,
   TelegramMessageLiveLocation,
   TelegramMessageLocation,
+  TelegramMessagePoll,
   TelegramMessageServiceEditChatTheme,
   TelegramMessageServicePhoneCall,
   TelegramMessageServicePhoneCallMissed,
@@ -22,10 +26,12 @@ import {
   TelegramMessageText,
   TelegramMessageTextViaBot,
   TelegramMessageVideo,
+  TelegramMessageVideoMessage,
   TelegramMessageVoiceMessage,
   TextTypeCode,
   TextTypeCustomEmoji,
   TextTypeGeneric,
+  TextTypeMentionName,
   TextTypeTextLink,
 } from "../types/telegramExport.type.ts";
 
@@ -34,7 +40,7 @@ const from = {
   from_id: joi.string().pattern(/^user/).required(),
 };
 const date: Required<SchemaMap<TelegramMessageDate>> = {
-  date_unixtime: joi.string().required(),
+  date_unixtime: joi.string(),
   date: joi.string().required(),
 };
 const edited: Required<SchemaMap<TelegramMessageEdited>> = {
@@ -47,12 +53,22 @@ const strings = (...t: string[]) =>
     .valid(...t)
     .required();
 const id = joi.number().required();
-const text_entities = joi.array().required();
+const text_entities = joi.array();
 const reply_to_message_id = joi.number();
-const forwarded_from = joi.string();
+const forwarded_from = joi.alternatives().try(joi.string(), joi.valid(null));
+const via_bot = joi.string().pattern(/^@/);
 
 function makeEditedAnd<TSchema>(schema: SchemaMap<TSchema>) {
-  return joi.object({ ...schema }).and("edited", "edited_unixtime");
+  // if edited_unixtime is present, edited must be present
+  // but if edited is present, edited_unixtime is not required
+  return joi
+    .object({ ...schema })
+    .when("edited_unixtime", {
+      is: joi.exist(),
+      then: joi.object({ ...schema, ...edited }),
+      otherwise: joi.object({ ...schema }),
+    })
+    .required();
 }
 
 const textTypeCustomEmoji: Required<SchemaMap<TextTypeCustomEmoji>> = {
@@ -69,8 +85,10 @@ const textTypeGeneric: Required<SchemaMap<TextTypeGeneric>> = {
     "code",
     "italic",
     "bold",
+    "underline",
     "strikethrough",
     "spoiler",
+    "bank_card",
     "hashtag",
     "cashtag",
     "email",
@@ -90,6 +108,12 @@ const textTypeCode: Required<SchemaMap<TextTypeCode>> = {
   type: strings("pre"),
 };
 
+const textTypeMentionName: Required<SchemaMap<TextTypeMentionName>> = {
+  text: joi.string().required(),
+  user_id: joi.number().required(),
+  type: strings("mention_name"),
+};
+
 const text = joi
   .alternatives()
   .try(
@@ -97,7 +121,14 @@ const text = joi
     joi
       .array()
       .min(1)
-      .items(joi.string().allow(""), textTypeCustomEmoji, textTypeGeneric, textTypeTextLink, textTypeCode)
+      .items(
+        joi.string().allow(""),
+        textTypeCustomEmoji,
+        textTypeGeneric,
+        textTypeTextLink,
+        textTypeCode,
+        textTypeMentionName
+      )
   )
   .required();
 
@@ -115,7 +146,7 @@ const telegramMessageText: Required<SchemaMap<TelegramMessageText>> = {
 
 const telegramMessageTextViaBot: Required<SchemaMap<TelegramMessageTextViaBot>> = {
   ...telegramMessageText,
-  via_bot: joi.string().pattern(/^@/),
+  via_bot,
 };
 
 const telegramMessageSticker: Required<SchemaMap<TelegramMessageSticker>> = {
@@ -126,8 +157,9 @@ const telegramMessageSticker: Required<SchemaMap<TelegramMessageSticker>> = {
   media_type: strings("sticker"),
   sticker_emoji: joi.string(),
   text: strings(""),
-  text_entities: joi.array().length(0).required(),
-  thumbnail: joi.string().required(),
+  text_entities: joi.array().length(0),
+  thumbnail: joi.string(),
+  via_bot,
 };
 
 const telegramMessageAnimatedSticker: Required<SchemaMap<TelegramMessageAnimatedSticker>> = {
@@ -143,11 +175,29 @@ const telegramMessageAsFile: Required<SchemaMap<TelegramMessageAsFile>> = {
   id,
   mime_type: joi.string().required(),
   text,
-  text_entities: joi.array().required(),
+  text_entities,
   thumbnail: joi.string(),
   forwarded_from,
   reply_to_message_id,
   type: strings("message"),
+};
+
+const telegramMessageAnimatedStickerViaBot: Required<SchemaMap<TelegramMessageAnimatedStickerViaBot>> = {
+  ...telegramMessageAsFile,
+  height: joi.number().required(),
+  width: joi.number().required(),
+  mime_type: strings("application/x-tgsticker"),
+  thumbnail: joi.string().required(),
+  via_bot,
+  text: strings(""),
+  text_entities: joi.array().length(0),
+};
+
+const telegramMessageAsFileNoMimeType: Required<SchemaMap<TelegramMessageAsFileNoMimeType>> = {
+  ...(() => {
+    const { mime_type: _, ...a } = telegramMessageAsFile;
+    return a;
+  })(),
 };
 
 const telegramMessageImageFile: Required<SchemaMap<TelegramMessageImageFile>> = {
@@ -156,7 +206,7 @@ const telegramMessageImageFile: Required<SchemaMap<TelegramMessageImageFile>> = 
     return a;
   })(),
   thumbnail: joi.string(),
-  mime_type: strings("image/jpeg", "image/png"),
+  mime_type: strings("image/jpeg", "image/png", "image/heif", "image/gif"),
   height: joi.number().required(),
   width: joi.number().required(),
 };
@@ -168,7 +218,19 @@ const telegramMessageVideo: Required<SchemaMap<TelegramMessageVideo>> = {
   width: joi.number().required(),
   media_type: strings("video_file"),
   thumbnail: joi.string().required(),
-  mime_type: strings("video/mp4"),
+  mime_type: joi
+    .string()
+    .pattern(/^video\//)
+    .required(),
+};
+
+const telegramMessageVideoMessage: Required<SchemaMap<TelegramMessageVideoMessage>> = {
+  ...(() => {
+    const { thumbnail: _, ...a } = telegramMessageVideo;
+    return a;
+  })(),
+  thumbnail: joi.string(),
+  media_type: strings("video_message"),
 };
 
 const telegramMessageAnimation: Required<SchemaMap<TelegramMessageAnimation>> = {
@@ -178,6 +240,7 @@ const telegramMessageAnimation: Required<SchemaMap<TelegramMessageAnimation>> = 
   })(),
   thumbnail: joi.string(),
   media_type: strings("animation"),
+  via_bot,
 };
 
 const telegramMessageVoiceMessage: Required<SchemaMap<TelegramMessageVoiceMessage>> = {
@@ -210,18 +273,19 @@ const telegramMessageBotPhoto: Required<SchemaMap<TelegramMessageBotPhoto>> = {
   height: joi.number().required(),
   photo: joi.string().required(),
   width: joi.number().required(),
-  via_bot: joi.string().pattern(/^@/),
+  via_bot,
   text,
 };
 
-const telegramMessageExpiringPhoto: Required<SchemaMap<TelegramMessageEpiringPhoto>> = {
+const telegramMessageExpiringPhoto: Required<SchemaMap<TelegramMessageExpiringPhoto>> = {
   ...date,
   ...from,
   id,
-  photo: joi.string().required(),
+  photo: joi.string(),
+  file: joi.string(),
   self_destruct_period_seconds: joi.number().required(),
   text,
-  text_entities: joi.array().required(),
+  text_entities,
   type: strings("message"),
 };
 
@@ -235,8 +299,12 @@ const telegramMessageLocation: Required<SchemaMap<TelegramMessageLocation>> = {
       longitude: joi.number().required(),
     })
     .required(),
+  reply_to_message_id,
+  forwarded_from,
+  address: joi.string(),
+  place_name: joi.string(),
   text: strings(""),
-  text_entities: joi.array().length(0).required(),
+  text_entities: joi.array().length(0),
   type: strings("message"),
 };
 
@@ -246,11 +314,54 @@ const telegramMessageLiveLocation: Required<SchemaMap<TelegramMessageLiveLocatio
   live_location_period_seconds: joi.number().required(),
 };
 
+const telegramMessagePoll: Required<SchemaMap<TelegramMessagePoll>> = {
+  ...date,
+  ...from,
+  forwarded_from,
+  id,
+  poll: joi
+    .object({
+      answers: joi.array().items(
+        joi.object({
+          chosen: joi.boolean().required(),
+          text: joi.string().required(),
+          voters: joi.number().required(),
+        })
+      ),
+      closed: joi.boolean().required(),
+      question: joi.string().required(),
+      total_voters: joi.number().required(),
+    })
+    .required(),
+  text: strings(""),
+  text_entities: joi.array().length(0),
+  type: strings("message"),
+};
+
+const telegramMessageContact: Required<SchemaMap<TelegramMessageContact>> = {
+  id: joi.number().required(),
+  ...date,
+  ...from,
+  forwarded_from,
+  text: strings(""),
+  text_entities: joi.array().length(0),
+  type: strings("message"),
+  reply_to_message_id,
+  contact_vcard: joi.string(),
+  contact_information: joi
+    .object({
+      first_name: joi.string().allow("").required(),
+      last_name: joi.string().allow("").required(),
+      phone_number: joi.string().allow("").required(),
+    })
+    .required(),
+};
+
 const commonService = {
   ...date,
   id,
   text: strings(""),
-  text_entities: joi.array().length(0).required(),
+  text_entities: joi.array().length(0),
   type: strings("service"),
 };
 
@@ -258,8 +369,8 @@ const telegramMessageServicePhoneCall: Required<SchemaMap<TelegramMessageService
   action: strings("phone_call"),
   actor: joi.string().required(),
   actor_id: from.from_id,
-  discard_reason: strings("hangup"),
-  duration_seconds: joi.number().required(),
+  discard_reason: strings("hangup", "disconnect"),
+  duration_seconds: joi.number(),
   ...commonService,
 };
 
@@ -284,7 +395,7 @@ const telegramMessageServiceEditChatTheme: Required<SchemaMap<TelegramMessageSer
   action: strings("edit_chat_theme"),
   actor: joi.string().required(),
   actor_id: from.from_id,
-  emoticon: joi.string().required(),
+  emoticon: joi.string(),
   ...commonService,
 };
 
@@ -321,8 +432,11 @@ const schema = joi.object<TelegramExport>({
           makeEditedAnd(telegramMessageSticker),
           makeEditedAnd(telegramMessageAnimatedSticker),
           makeEditedAnd(telegramMessageAsFile),
+          telegramMessageAnimatedStickerViaBot,
           makeEditedAnd(telegramMessageImageFile),
+          makeEditedAnd(telegramMessageAsFileNoMimeType),
           makeEditedAnd(telegramMessageVideo),
+          makeEditedAnd(telegramMessageVideoMessage),
           makeEditedAnd(telegramMessageAnimation),
           makeEditedAnd(telegramMessageVoiceMessage),
           makeEditedAnd(telegramMessageAudioFile),
@@ -330,6 +444,8 @@ const schema = joi.object<TelegramExport>({
           makeEditedAnd(telegramMessageExpiringPhoto),
           makeEditedAnd(telegramMessageLocation),
           makeEditedAnd(telegramMessageLiveLocation),
+          telegramMessagePoll,
+          telegramMessageContact,
           telegramMessageServicePhoneCall,
           telegramMessageServicePhoneCallMissed,
           telegramMessageServiceProximityReached,
