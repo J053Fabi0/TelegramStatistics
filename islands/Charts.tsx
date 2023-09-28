@@ -24,8 +24,8 @@ export default function Charts({ data }: ChartsProps) {
       <TopWordsPerUser data={data} participantsNames={participantsNames} />
 
       {/* Songs sent */}
-      <div class="overflow-x-auto max-w-screen-sm mb-10">
-        <Typography variant="h2">Songs sent</Typography>
+      <div class="overflow-x-auto max-w-screen-sm">
+        <Typography variant="h2">Songs sent (YouTube)</Typography>
         <Chart
           type="bar"
           options={{ devicePixelRatio: 2 }}

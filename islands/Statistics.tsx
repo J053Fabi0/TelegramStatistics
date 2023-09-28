@@ -32,7 +32,9 @@ export default function Statistics() {
         }}
       />
 
-      <Charts data={data.value} />
+      <div class="flex flex-col gap-10 mb-10">
+        <Charts data={data.value} />
+      </div>
     </>
   );
 }
