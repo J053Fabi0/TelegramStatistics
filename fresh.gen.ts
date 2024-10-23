@@ -2,25 +2,26 @@
 // This file SHOULD be checked into source version control.
 // This file is automatically updated during development when running `dev.ts`.
 
-import * as $0 from "./routes/_404.tsx";
-import * as $1 from "./routes/_app.tsx";
-import * as $2 from "./routes/index.tsx";
-import * as $$0 from "./islands/Charts.tsx";
-import * as $$1 from "./islands/Statistics.tsx";
-import * as $$2 from "./islands/charts/TopWordsPerUser.tsx";
+import * as $_404 from "./routes/_404.tsx";
+import * as $_app from "./routes/_app.tsx";
+import * as $index from "./routes/index.tsx";
+import * as $Charts from "./islands/Charts.tsx";
+import * as $Statistics from "./islands/Statistics.tsx";
+import * as $charts_TopWordsPerUser from "./islands/charts/TopWordsPerUser.tsx";
+import type { Manifest } from "$fresh/server.ts";
 
 const manifest = {
   routes: {
-    "./routes/_404.tsx": $0,
-    "./routes/_app.tsx": $1,
-    "./routes/index.tsx": $2,
+    "./routes/_404.tsx": $_404,
+    "./routes/_app.tsx": $_app,
+    "./routes/index.tsx": $index,
   },
   islands: {
-    "./islands/Charts.tsx": $$0,
-    "./islands/Statistics.tsx": $$1,
-    "./islands/charts/TopWordsPerUser.tsx": $$2,
+    "./islands/Charts.tsx": $Charts,
+    "./islands/Statistics.tsx": $Statistics,
+    "./islands/charts/TopWordsPerUser.tsx": $charts_TopWordsPerUser,
   },
   baseUrl: import.meta.url,
-};
+} satisfies Manifest;
 
 export default manifest;
