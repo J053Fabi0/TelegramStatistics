@@ -37,6 +37,7 @@ import {
   TextTypeGeneric,
   TextTypeMentionName,
   TextTypeTextLink,
+  TextTypeBlockquote,
 } from "../types/telegramExport.type.ts";
 
 const from = {
@@ -118,6 +119,12 @@ const textTypeMentionName: Required<SchemaMap<TextTypeMentionName>> = {
   type: strings("mention_name"),
 };
 
+const textTypeBlockquote: Required<SchemaMap<TextTypeBlockquote>> = {
+  text: joi.string().required(),
+  type: strings("blockquote"),
+  collapsed: joi.boolean().required(),
+};
+
 const text = joi
   .alternatives()
   .try(
@@ -131,7 +138,8 @@ const text = joi
         textTypeGeneric,
         textTypeTextLink,
         textTypeCode,
-        textTypeMentionName
+        textTypeMentionName,
+        textTypeBlockquote
       )
   )
   .required();
@@ -504,7 +512,7 @@ const schema = joi.object<TelegramExport>({
 export default function validateJSON(json: TelegramExport) {
   return schema.validate(json, {
     convert: false,
-    allowUnknown: false,
     abortEarly: true,
+    stripUnknown: true,
   });
 }

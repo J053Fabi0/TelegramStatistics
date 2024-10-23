@@ -63,6 +63,12 @@ export interface TextTypeGeneric {
     | "phone";
 }
 
+export interface TextTypeBlockquote {
+  text: string;
+  type: "blockquote";
+  collapsed: boolean;
+}
+
 export interface TextTypeTextLink {
   text: string;
   href: string;
@@ -81,7 +87,12 @@ export interface TextTypeMentionName {
   user_id: number;
 }
 
-export type TextType = TextTypeCustomEmoji | TextTypeGeneric | TextTypeCode | TextTypeMentionName;
+export type TextType =
+  | TextTypeCustomEmoji
+  | TextTypeGeneric
+  | TextTypeCode
+  | TextTypeMentionName
+  | TextTypeBlockquote;
 
 export interface TelegramMessageDate {
   /** Add ".000Z" to convert to Date */
