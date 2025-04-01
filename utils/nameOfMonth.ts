@@ -14,7 +14,7 @@ export enum Month {
 }
 
 export default function nameOfMonth(date = new Date()): Month {
-  switch (date.getUTCMonth()) {
+  switch (date.getMonth()) {
     case 0:
       return Month.January;
     case 1:
