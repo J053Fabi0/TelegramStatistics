@@ -72,10 +72,6 @@ export default function TopWordsPerUser({ participantsNames, data }: TopWordsPer
     if (rows.value === null && IS_BROWSER) addRows(10);
   });
 
-  useSignalEffect(() => {
-    minLength.value;
-  });
-
   return (
     <div class="flex gap-4 flex-col items-center">
       <div class="flex gap-4 justify-center w-full">
@@ -92,7 +88,7 @@ export default function TopWordsPerUser({ participantsNames, data }: TopWordsPer
             type="number"
             id="validator"
             name="validator"
-            value={minLength.value}
+            value={minLength}
             onInput={(e) => {
               const value = +e.currentTarget.value;
               if (
@@ -103,8 +99,11 @@ export default function TopWordsPerUser({ participantsNames, data }: TopWordsPer
                 /\D/g.test(e.currentTarget.value)
               )
                 return;
-              minLength.value = value;
-              rows.value = null;
+
+              setTimeout(() => {
+                minLength.value = value;
+                rows.value = null;
+              }, 1);
             }}
             class="p-2 border border-gray-300 rounded w-16"
           />
