@@ -3,8 +3,9 @@ import { IS_BROWSER } from "$fresh/runtime.ts";
 import Button from "../../components/Button.tsx";
 import Typography from "../../components/Typography.tsx";
 import { TelegramExport } from "../../types/telegramExport.type.ts";
+import getTopWordsPerUser from "../../utils/getTopWordsPerUser.tsx";
 import { useSignal, useSignalEffect, useComputed } from "@preact/signals";
-import getTopWordsPerUser, { TopWordsPerUser } from "../../utils/getTopWordsPerUser.tsx";
+import { type TopWordsPerUser } from "../../utils/getTopWordsPerUser.tsx";
 
 interface TopWordsPerUserProps {
   data: TelegramExport;
